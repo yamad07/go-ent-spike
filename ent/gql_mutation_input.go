@@ -5,15 +5,13 @@ package ent
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
 	Age  int
-	Name *string
+	Name string
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
 func (i *CreateUserInput) Mutate(m *UserMutation) {
 	m.SetAge(i.Age)
-	if v := i.Name; v != nil {
-		m.SetName(*v)
-	}
+	m.SetName(i.Name)
 }
 
 // SetInput applies the change-set in the CreateUserInput on the UserCreate builder.

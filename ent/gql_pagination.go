@@ -15,13 +15,14 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/errcode"
+	"github.com/google/uuid"
 	"github.com/vektah/gqlparser/v2/gqlerror"
 )
 
 // Common entgql types.
 type (
-	Cursor         = entgql.Cursor[int]
-	PageInfo       = entgql.PageInfo[int]
+	Cursor         = entgql.Cursor[uuid.UUID]
+	PageInfo       = entgql.PageInfo[uuid.UUID]
 	OrderDirection = entgql.OrderDirection
 )
 
@@ -307,6 +308,20 @@ func (u *UserQuery) Paginate(
 }
 
 var (
+	// UserOrderFieldID orders User by id.
+	UserOrderFieldID = &UserOrderField{
+		Value: func(u *User) (ent.Value, error) {
+			return u.ID, nil
+		},
+		column: user.FieldID,
+		toTerm: user.ByID,
+		toCursor: func(u *User) Cursor {
+			return Cursor{
+				ID:    u.ID,
+				Value: u.ID,
+			}
+		},
+	}
 	// UserOrderFieldAge orders User by age.
 	UserOrderFieldAge = &UserOrderField{
 		Value: func(u *User) (ent.Value, error) {
@@ -341,6 +356,8 @@ var (
 func (f UserOrderField) String() string {
 	var str string
 	switch f.column {
+	case UserOrderFieldID.column:
+		str = "ID"
 	case UserOrderFieldAge.column:
 		str = "AGE"
 	case UserOrderFieldName.column:
@@ -361,6 +378,8 @@ func (f *UserOrderField) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("UserOrderField %T must be a string", v)
 	}
 	switch str {
+	case "ID":
+		*f = *UserOrderFieldID
 	case "AGE":
 		*f = *UserOrderFieldAge
 	case "NAME":

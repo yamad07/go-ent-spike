@@ -11,7 +11,21 @@ import (
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.User, error) {
-	return &model.User{}, nil
+	// この部分を生成したい
+	usr, err := r.client.User.
+		Create().
+		SetName(input.Name).
+		SetAge(input.Age).
+		Save(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.User{
+		ID:   usr.ID.String(),
+		Name: input.Name,
+		Age:  input.Age,
+	}, nil
 }
 
 // Mutation returns MutationResolver implementation.

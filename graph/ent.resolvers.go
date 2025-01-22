@@ -8,7 +8,10 @@ import (
 	"context"
 	"fmt"
 	"go-ent-spike/ent"
+	"go-ent-spike/ent/user"
 	"go-ent-spike/graph/model"
+
+	"github.com/google/uuid"
 )
 
 // Node is the resolver for the node field.
@@ -23,7 +26,54 @@ func (r *queryResolver) Nodes(ctx context.Context, ids []string) ([]ent.Noder, e
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context, after *string, first *int, before *string, last *int, orderBy *model.UserOrder, where *model.UserWhereInput) (*model.UserConnection, error) {
-	return &model.UserConnection{}, nil
+	// このコードを生成したい
+	usersQuery := r.client.User.Query()
+
+	if where != nil {
+		if where.Name != nil {
+			usersQuery = usersQuery.Where(user.NameEQ(*where.Name))
+		}
+		if where.Age != nil {
+			usersQuery = usersQuery.Where(user.AgeEQ(*where.Age))
+		}
+	}
+
+	if after != nil {
+		afterid, err := uuid.Parse(*after)
+		if err != nil {
+			return nil, err
+		}
+		usersQuery = usersQuery.Where(user.IDGT(afterid))
+	}
+
+	if before != nil {
+		beforeid, err := uuid.Parse(*before)
+		if err != nil {
+			return nil, err
+		}
+		usersQuery = usersQuery.Where(user.IDLT(beforeid))
+	}
+
+	users, err := usersQuery.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	userConnection := &model.UserConnection{
+		Edges: []*model.UserEdge{},
+	}
+
+	for _, user := range users {
+		userConnection.Edges = append(userConnection.Edges, &model.UserEdge{
+			Node: &model.User{
+				ID:   user.ID.String(),
+				Name: user.Name,
+				Age:  user.Age,
+			},
+		})
+	}
+
+	return userConnection, nil
 }
 
 // Query returns QueryResolver implementation.
